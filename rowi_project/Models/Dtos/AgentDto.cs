@@ -1,0 +1,26 @@
+﻿namespace rowi_project.Models.Dtos
+{
+    public class AgentDto
+    {
+        public int Id { get; set; }
+
+        // Представитель
+        public string RepFullName { get; set; } = null!;
+        public string RepEmail { get; set; } = string.Empty;
+        public string RepPhoneNumber { get; set; } = string.Empty;
+
+        // Компания
+        public string ShortName { get; set; } = null!;
+        public string FullName { get; set; } = null!;
+        public string Inn { get; set; } = null!;
+        public string Kpp { get; set; } = null!;
+        public string Ogrn { get; set; } = null!;
+        public DateOnly OgrnDateOfAssignment { get; set; }
+
+        // Банки
+        public List<BankDto> Banks { get; set; } = new();
+
+        public bool Important { get; set; }
+    }
+
+}

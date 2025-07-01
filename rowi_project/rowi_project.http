@@ -1,0 +1,6 @@
+@rowi_project_HostAddress = http://localhost:5077
+
+GET {{rowi_project_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
