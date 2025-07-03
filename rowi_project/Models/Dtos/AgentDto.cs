@@ -18,7 +18,7 @@
         public DateOnly OgrnDateOfAssignment { get; set; }
 
         // Банки
-        public List<BankDto> Banks { get; set; } = new();
+        public List<BankDto> Banks { get; set; } = [];
 
         public bool Important { get; set; }
     }

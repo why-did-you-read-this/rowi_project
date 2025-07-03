@@ -1,57 +1,48 @@
-﻿using rowi_project.Validation;
+﻿using Microsoft.EntityFrameworkCore;
+using rowi_project.Validation;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace rowi_project.Models.Entities
 {
-    [Table("companies")]
+    [Index(nameof(Inn), IsUnique = true)]
+    [Index(nameof(Ogrn), IsUnique = true)]
+    [Index(nameof(ShortName), IsUnique = true)]
     public class Company
     {
-        [Column("id")]
+        [Key]
         public int Id { get; set; }
 
-        [Column("short_name")]
-        [StringLength(50, MinimumLength = 6)] // АО "А" - 6 символов
+        [Required, StringLength(50, MinimumLength = 6)] // АО "А" - 6 символов
         public string ShortName { get; set; } = null!;
 
-        [Column("full_name")]
-        [StringLength(100, MinimumLength = 6)]
+        [Required, StringLength(100, MinimumLength = 6)]
         public string FullName { get; set; } = null!;
 
-        [Column("inn")]
-        [RegularExpression(@"^\d{10}$")]
+        [Required, RegularExpression(@"^\d{10}$")]
         public string Inn { get; set; } = null!;
 
-        [Column("kpp")]
-        [RegularExpression(@"^\d{9}$")]
+        [Required, RegularExpression(@"^\d{9}$")]
         public string Kpp { get; set; } = null!;
 
-        [Column("ogrn")]
-        [RegularExpression(@"^\d{13}$")]
+        [Required, RegularExpression(@"^\d{13}$")]
         public string Ogrn { get; set; } = null!;
 
-        [Column("ogrn_date_of_assignment")]
-        [DateNotInFuture]
+        [Required, DateNotInFuture]
         public DateOnly OgrnDateOfAssignment { get; set; }
 
-        [Column("rep_name")]
-        [StringLength(50, MinimumLength = 1)]
+        [Required, StringLength(50, MinimumLength = 1)]
         public string RepName { get; set; } = null!;
 
-        [Column("rep_surname")]
-        [StringLength(50, MinimumLength = 1)]
+        [Required, StringLength(50, MinimumLength = 1)]
         public string RepSurName { get; set; } = null!;
 
-        [Column("rep_patronymic")]
         [StringLength(50)]
         public string RepPatronymic { get; set; } = string.Empty;
 
-        [Column("rep_email")]
-        [EmailAddress]
+        [Required, EmailAddress]
         public string RepEmail { get; set; } = string.Empty;
         
-        [Column("rep_phone_number")]
-        [Phone]
+        [Required, Phone]
         public string RepPhoneNumber { get; set; } = string.Empty;
 
 

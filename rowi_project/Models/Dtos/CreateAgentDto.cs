@@ -44,7 +44,7 @@ namespace rowi_project.Models.Dtos
         public string RepPhoneNumber { get; set; } = string.Empty;
 
         // Доп. параметры
-        public List<int> BankIds { get; set; } = new();
+        public List<int> BankIds { get; set; } = [];
         public bool Important { get; set; }
     }
 }

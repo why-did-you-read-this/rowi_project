@@ -6,15 +6,8 @@ using rowi_project.Models.Entities;
 
 namespace rowi_project.Services;
 
-public class AgentService : IAgentService
+public class AgentService(AppDbContext context) : IAgentService
 {
-    private readonly AppDbContext _context;
-
-    public AgentService(AppDbContext context)
-    {
-        _context = context;
-    }
-
     public async Task<int> CreateAgentAsync(CreateAgentDto dto)
     {
         var company = new Company
@@ -38,48 +31,27 @@ public class AgentService : IAgentService
             Company = company
         };
 
-        foreach (var bankId in dto.BankIds)
-        {
-            agent.AgentBanks.Add(new AgentBank
-            {
-                Agent = agent,
-                BankId = bankId
-            });
-        }
+        agent.Banks = await context.Banks
+            .Where(b => dto.BankIds.Contains(b.Id))
+            .ToListAsync();
 
         try
         {
-            _context.Agents.Add(agent);
-            await _context.SaveChangesAsync();
-
+            context.Agents.Add(agent);
+            await context.SaveChangesAsync();
             return agent.Id;
         }
-        // 23505 - unique_violation
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505") 
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505")
         {
-            if (pgEx.ConstraintName == "uq_short_name")
-                throw new ArgumentException("Компания с таким кратким наименованием уже существует");
-            if (pgEx.ConstraintName == "uq_full_name")
-                throw new ArgumentException("Компания с таким полным наименованием уже существует");
-            if (pgEx.ConstraintName == "uq_inn")
-                throw new ArgumentException("Компания с таким ИНН уже существует");
-            if (pgEx.ConstraintName == "uq_ogrn")
-                throw new ArgumentException("Компания с таким ОГРН уже существует");
-            if (pgEx.ConstraintName == "uq_rep_email")
-                throw new ArgumentException("Представитель с таким адресом электронной почты уже существует");
-            if (pgEx.ConstraintName == "uq_rep_phone_number")
-                throw new ArgumentException("Представитель с таким номером телефона уже существует");
-
-            throw new ArgumentException("Нарушено уникальное ограничение");
+            return HandleUniqueViolation(pgEx);
         }
-
     }
 
     public async Task UpdateAgentAsync(UpdateAgentDto dto, CancellationToken cancellationToken)
     {
-        var agent = await _context.Agents
+        var agent = await context.Agents
             .Include(a => a.Company)
-            .Include(a => a.AgentBanks)
+            .Include(a => a.Banks)
             .FirstOrDefaultAsync(a => a.Id == dto.Id, cancellationToken);
 
         if (agent == null)
@@ -98,32 +70,29 @@ public class AgentService : IAgentService
         company.RepEmail = dto.RepEmail;
         company.RepPhoneNumber = dto.RepPhoneNumber;
 
-        agent.AgentBanks.Clear();
-        foreach (var bankId in dto.BankIds)
-        {
-            agent.AgentBanks.Add(new AgentBank
-            {
-                AgentId = agent.Id,
-                BankId = bankId
-            });
-        }
+        agent.Banks = await context.Banks
+            .Where(b => dto.BankIds.Contains(b.Id))
+            .ToListAsync(cancellationToken);
 
         agent.Important = dto.Important;
 
-        await _context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505")
+        {
+            HandleUniqueViolation(pgEx);
+        }
     }
 
     public async Task<AgentDto?> GetAgentByIdAsync(int id)
     {
-        var agent = await _context.Agents
+        var agent = await context.Agents
             .Include(a => a.Company)
-            .Include(a => a.AgentBanks)
-                .ThenInclude(ab => ab.Bank)
-                    .ThenInclude(b => b.Company)
-                    .OrderBy(a => a.Id)
-                    .FirstOrDefaultAsync(a => a.Id == id);
-        //var t = await agent.FirstOrDefaultAsync(a => a.Id == id);
-
+            .Include(a => a.Banks)
+                .ThenInclude(b => b.Company)
+            .FirstOrDefaultAsync(a => a.Id == id);
 
         if (agent == null) return null;
 
@@ -140,11 +109,29 @@ public class AgentService : IAgentService
             Ogrn = agent.Company.Ogrn,
             OgrnDateOfAssignment = agent.Company.OgrnDateOfAssignment,
             Important = agent.Important,
-            Banks = agent.AgentBanks.Select(ab => new BankDto
+            Banks = agent.Banks.Select(b => new BankDto
             {
-                Id = ab.Bank.Id,
-                ShortName = ab.Bank.Company.ShortName
+                Id = b.Id,
+                ShortName = b.Company.ShortName
             }).ToList()
         };
+    }
+
+    private static int HandleUniqueViolation(PostgresException pgEx)
+    {
+        if (pgEx.ConstraintName == "uq_short_name")
+            throw new ArgumentException("Компания с таким кратким наименованием уже существует");
+        if (pgEx.ConstraintName == "uq_full_name")
+            throw new ArgumentException("Компания с таким полным наименованием уже существует");
+        if (pgEx.ConstraintName == "uq_inn")
+            throw new ArgumentException("Компания с таким ИНН уже существует");
+        if (pgEx.ConstraintName == "uq_ogrn")
+            throw new ArgumentException("Компания с таким ОГРН уже существует");
+        if (pgEx.ConstraintName == "uq_rep_email")
+            throw new ArgumentException("Представитель с таким email уже существует");
+        if (pgEx.ConstraintName == "uq_rep_phone_number")
+            throw new ArgumentException("Представитель с таким телефоном уже существует");
+
+        throw new ArgumentException("Нарушено уникальное ограничение");
     }
 }
