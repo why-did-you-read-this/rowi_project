@@ -37,7 +37,7 @@ namespace rowi_project.Models.Entities
         public string RepSurName { get; set; } = null!;
 
         [StringLength(50)]
-        public string RepPatronymic { get; set; } = string.Empty;
+        public string? RepPatronymic { get; set; } = string.Empty;
 
         [Required, EmailAddress]
         public string RepEmail { get; set; } = string.Empty;

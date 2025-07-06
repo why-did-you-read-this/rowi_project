@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36221.1 d17.14
+VisualStudioVersion = 17.14.36221.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "rowi_project", "rowi_project\rowi_project.csproj", "{B1DA2F3F-66AC-4221-BC12-AAC16B44104E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "data_generator", "data_generator\data_generator.csproj", "{7C498088-8DD3-4B93-B383-2981BD88BB12}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{B1DA2F3F-66AC-4221-BC12-AAC16B44104E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B1DA2F3F-66AC-4221-BC12-AAC16B44104E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B1DA2F3F-66AC-4221-BC12-AAC16B44104E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7C498088-8DD3-4B93-B383-2981BD88BB12}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C498088-8DD3-4B93-B383-2981BD88BB12}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C498088-8DD3-4B93-B383-2981BD88BB12}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C498088-8DD3-4B93-B383-2981BD88BB12}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
