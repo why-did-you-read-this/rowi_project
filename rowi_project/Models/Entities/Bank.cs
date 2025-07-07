@@ -1,15 +1,12 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
-namespace rowi_project.Models.Entities
+namespace rowi_project.Models.Entities;
+public class Bank
 {
-    public class Bank
-    {
-        [Key]
-        public int Id { get; set; }
+    [Key]
+    public int Id { get; set; }
 
-        public Company Company { get; set; } = null!;
+    public Company Company { get; set; } = null!;
 
-        public ICollection<Agent> Agents { get; set; } = [];
-    }
+    public ICollection<Agent> Agents { get; set; } = [];
 }

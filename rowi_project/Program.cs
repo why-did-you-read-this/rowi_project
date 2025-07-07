@@ -21,7 +21,7 @@ namespace rowi_project
             string user = builder.Configuration["POSTGRES_USER"]!;
             string password = builder.Configuration["POSTGRES_PASSWORD"]!;
             string db = builder.Configuration["POSTGRES_DB"]!;
-            string connectionString = $"Host={host};Port={port};Username={user};Password={password};Database={db}";
+            string connectionString = $"Host={host};Port={port};Username={user};Password={password};Database={db};Include Error Detail=true";
             // Add services to the container.
 
             builder.Services.AddControllers();

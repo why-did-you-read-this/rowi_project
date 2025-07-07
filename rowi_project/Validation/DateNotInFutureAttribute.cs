@@ -1,17 +1,21 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace rowi_project.Validation
+namespace rowi_project.Validation;
+
+public class DateNotInFutureAttribute : ValidationAttribute
 {
-    public class DateNotInFutureAttribute : ValidationAttribute
+    public DateNotInFutureAttribute()
     {
-        public override bool IsValid(object? value)
+        ErrorMessage = "Дата не может быть в будущем";
+    }
+
+    public override bool IsValid(object? value)
+    {
+        if (value == null) return true;
+        if (value is DateOnly date)
         {
-            if (value == null) return true;
-            if (value is DateOnly date)
-            {
-                return date <= DateOnly.FromDateTime(DateTime.Today);
-            }
-            return false;
+            return date <= DateOnly.FromDateTime(DateTime.Today);
         }
+        return false;
     }
 }

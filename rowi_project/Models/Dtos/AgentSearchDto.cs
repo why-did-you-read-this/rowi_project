@@ -1,20 +1,23 @@
-﻿namespace rowi_project.Models.Dtos
+﻿namespace rowi_project.Models.Dtos;
+
+public class AgentSearchDto
 {
-    public class AgentSearchDto
-    {
-        public string? Inn { get; set; }
-        public string? RepPhoneNumber { get; set; }
-        public string? RepEmail { get; set; }
+    public string? Inn { get; set; }
+    public string? Ogrn { get; set; }
+    public string? RepPhoneNumber { get; set; }
+    public string? RepEmail { get; set; }
+    public string? ShortName { get; set; }
+    public string? RepName { get; set; }
+    public string? RepSurName { get; set; }
 
-        public DateOnly? OgrnDateFrom { get; set; }
-        public DateOnly? OgrnDateTo { get; set; }
+    public DateOnly? OgrnDateFrom { get; set; }
+    public DateOnly? OgrnDateTo { get; set; }
 
-        // Сортировка
-        public string? SortBy { get; set; }
-        public string? SortDirection { get; set; } = "asc";
+    // Сортировка
+    public string? SortBy { get; set; }
+    public string? SortDirection { get; set; } = "asc";
 
-        // Пагинация
-        public int PageSize { get; set; } = 10;
-        public int PageNumber { get; set; } = 1;
-    }
+    // Пагинация
+    public int PageSize { get; set; } = 10;
+    public int PageNumber { get; set; } = 1;
 }

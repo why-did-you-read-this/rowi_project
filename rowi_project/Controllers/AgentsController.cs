@@ -5,16 +5,15 @@ using rowi_project.Services;
 namespace rowi_project.Controllers;
 
 [ApiController]
-[Route("agents")] // [Route("api/[controller]")]
+[Route("api/[controller]")]
 public class AgentsController(IAgentService agentService) : ControllerBase
 {
-
     [HttpPost]
-    public async Task<ActionResult<int>> CreateAgent([FromBody] CreateAgentDto dto)
+    public async Task<ActionResult<int>> CreateAgent([FromBody] CreateAgentDto dto, CancellationToken cancellationToken)
     {
         try
         {
-            var id = await agentService.CreateAgentAsync(dto);
+            var id = await agentService.CreateAgentAsync(dto, cancellationToken);
             return Ok(new { id });
         }
         catch (ArgumentException ex)
@@ -26,11 +25,15 @@ public class AgentsController(IAgentService agentService) : ControllerBase
     [HttpPut("{id:int}")]
     public async Task<IActionResult> UpdateAgent(int id, [FromBody] UpdateAgentDto dto, CancellationToken cancellationToken)
     {
-        if (dto.Id != id)
-            return BadRequest("ID в пути и в теле запроса не совпадают");
-
-        await agentService.UpdateAgentAsync(dto, cancellationToken);
-        return Ok();
+        try
+        {
+            await agentService.UpdateAgentAsync(id, dto, cancellationToken);
+            return Ok();
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
 
     [HttpGet("{id:int}")]
@@ -38,9 +41,47 @@ public class AgentsController(IAgentService agentService) : ControllerBase
     {
         var result = await agentService.GetAgentByIdAsync(id);
         if (result == null)
-            return NotFound();
+            return NotFound(new ProblemDetails
+            {
+                Title = "Agent not found",
+                Detail = $"Agent with ID = {id} does not exist",
+                Status = 404,
+                Instance = HttpContext.Request.Path
+            });
 
         return Ok(result);
+    }
+
+    [HttpGet("search")]
+    public async Task<IActionResult> Search([FromQuery] AgentSearchDto dto, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var agents = await agentService.SearchAgentsAsync(dto, cancellationToken);
+            return Ok(agents);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteAgent(int id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await agentService.DeleteAgentAsync(id, cancellationToken);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = ex.Message });
+        }
     }
 }
 

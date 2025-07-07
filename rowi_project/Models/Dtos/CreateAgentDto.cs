@@ -1,50 +1,49 @@
 ﻿using rowi_project.Validation;
 using System.ComponentModel.DataAnnotations;
 
-namespace rowi_project.Models.Dtos
+namespace rowi_project.Models.Dtos;
+
+public class CreateAgentDto
 {
-    public class CreateAgentDto
-    {
-        // Параметры компании
-        [Required]
-        public string ShortName { get; set; } = null!;
+    [Required]
+    public string ShortName { get; set; } = null!;
 
-        [Required]
-        public string FullName { get; set; } = null!;
+    [Required]
+    public string FullName { get; set; } = null!;
 
-        [Required]
-        [RegularExpression(@"^\d{10}$")]
-        public string Inn { get; set; } = null!;
+    [Required]
+    [RegularExpression(@"^\d{10}$")]
+    public string Inn { get; set; } = null!;
 
-        [Required]
-        [RegularExpression(@"^\d{9}$")]
-        public string Kpp { get; set; } = null!;
+    [Required]
+    [RegularExpression(@"^\d{9}$")]
+    public string Kpp { get; set; } = null!;
 
-        [Required]
-        [RegularExpression(@"^\d{13}$")]
-        public string Ogrn { get; set; } = null!;
+    [Required]
+    [RegularExpression(@"^\d{13}$")]
+    public string Ogrn { get; set; } = null!;
 
-        [Required]
-        [DateNotInFuture]
-        public DateOnly OgrnDateOfAssignment { get; set; }
+    [Required]
+    [DateNotInFuture]
+    public DateOnly? OgrnDateOfAssignment { get; set; }
 
-        // Представитель
-        [Required]
-        public string RepSurname { get; set; } = null!;
+    [Required]
+    public string RepSurname { get; set; } = null!;
 
-        [Required]
-        public string RepName { get; set; } = null!;
+    [Required]
+    public string RepName { get; set; } = null!;
 
-        public string RepPatronymic { get; set; } = string.Empty;
+    public string? RepPatronymic { get; set; } = null;
 
-        [EmailAddress]
-        public string RepEmail { get; set; } = string.Empty;
+    [Required, EmailAddress]
+    public string RepEmail { get; set; } = null!;
 
-        [Phone]
-        public string RepPhoneNumber { get; set; } = string.Empty;
+    [Required, Phone]
+    public string RepPhoneNumber { get; set; } = null!;
 
-        // Доп. параметры
-        public List<int> BankIds { get; set; } = [];
-        public bool Important { get; set; }
-    }
+    [Required]
+    public List<int>? BankIds { get; set; } = null!;
+
+    [Required]
+    public bool? Important { get; set; }
 }

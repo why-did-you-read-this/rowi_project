@@ -29,6 +29,10 @@ context.ChangeTracker.AutoDetectChangesEnabled = false;
 Random random = new();
 Faker faker = new(locale: "ru");
 
+HashSet<string> existingNumbers = context.Companies
+    .Select(c => c.RepPhoneNumber)
+    .ToHashSet();
+
 int amount = 1_000_002;
 int amountSameType = amount / 3;
 int limitForSave = 1_000;
@@ -120,6 +124,7 @@ Company GenerateCompany(int i, int m = 1)
     company.ShortName = companyNameAndEmail[0];
     company.FullName = companyNameAndEmail[1];
     company.RepEmail = companyNameAndEmail[2];
+    company.RepPhoneNumber = GenerateUniquePhone();
     return company;
 }
 
@@ -131,7 +136,6 @@ Company GenerateRepCompanyAndDate()
         .RuleFor(c => c.RepSurName, f => f.Name.LastName(gender))
         .RuleFor(c => c.RepPatronymic, f => faker.Random.Bool(0.9f) ? GeneratePatronymic(f, gender) : null)
         .RuleFor(c => c.RepEmail, f => f.Internet.Email())
-        .RuleFor(c => c.RepPhoneNumber, f => f.Phone.PhoneNumberFormat())
         .RuleFor(c => c.OgrnDateOfAssignment, f => DateOnly.FromDateTime(f.Date.Between(new DateTime(1992, 1, 1), new DateTime(2024, 12, 31))));
     return companyData.Generate();
 }
@@ -309,7 +313,6 @@ string[] GenerateCompanyNameAndEmail(string RepName, int i)
         "Оптима",
         "Квадрат"
     };
-    string[] domains = { };
     int counterNames = (i / companyNames.Length) + 1;
     string companyName = $"{companyNames[i % companyNames.Length]} {counterNames}";
     string legalFormShort = faker.PickRandom(legalFormsShort);
@@ -338,4 +341,21 @@ static string Transliterate(string russianText)
         result.Append(translitMap.TryGetValue(c.ToString(), out var value) ? value : c.ToString());
     }
     return result.ToString();
+}
+
+string GenerateUniquePhone()
+{
+    string phone;
+    do
+    {
+        int regionCode = random.Next(900, 999);
+        int part1 = random.Next(0, 999);
+        int part2 = random.Next(0, 99);
+        int part3 = random.Next(0, 99);
+
+        phone = $"({regionCode}){part1:D3}-{part2:D2}-{part3:D2}";
+    }
+    while (existingNumbers.Contains(phone));
+    existingNumbers.Add(phone);
+    return phone;
 }

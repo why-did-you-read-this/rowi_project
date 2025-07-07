@@ -27,6 +27,24 @@ public class CompanyConfiguration : IEntityTypeConfiguration<Company>
     public void Configure(EntityTypeBuilder<Company> builder)
     {
         builder.HasKey(c => c.Id);
+
+        builder.HasIndex(c => c.Inn).IsUnique();
+        builder.HasIndex(c => c.Ogrn).IsUnique();
+        builder.HasIndex(c => c.RepEmail).IsUnique();
+        builder.HasIndex(c => c.RepPhoneNumber).IsUnique();
+        builder.HasIndex(c => c.ShortName).IsUnique();
+        builder.HasIndex(c => c.FullName).IsUnique();
+
+        builder.Property(c => c.Inn).IsRequired();
+        builder.Property(c => c.Kpp).IsRequired();
+        builder.Property(c => c.Ogrn).IsRequired();
+        builder.Property(c => c.OgrnDateOfAssignment).IsRequired();
+        builder.Property(c => c.ShortName).IsRequired();
+        builder.Property(c => c.FullName).IsRequired();
+        builder.Property(c => c.RepSurName).IsRequired();
+        builder.Property(c => c.RepName).IsRequired();
+        builder.Property(c => c.RepEmail).IsRequired();
+        builder.Property(c => c.RepPhoneNumber).IsRequired();
     }
 }
 
@@ -57,6 +75,8 @@ public class AgentConfiguration : IEntityTypeConfiguration<Agent>
         // M:M Agent:Bank
         builder.HasMany(a => a.Banks)
             .WithMany(b => b.Agents);
+
+        builder.Property(a => a.Important).IsRequired();
     }
 }
 
