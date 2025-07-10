@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using rowi_project.Validation;
+﻿using rowi_project.Validation;
 using System.ComponentModel.DataAnnotations;
 
 namespace rowi_project.Models.Entities;

@@ -34,7 +34,7 @@ namespace rowi_project.Migrations
 
                     b.HasIndex("BanksId");
 
-                    b.ToTable("AgentBank");
+                    b.ToTable("AgentBank", (string)null);
                 });
 
             modelBuilder.Entity("rowi_project.Models.Entities.Agent", b =>
@@ -47,7 +47,7 @@ namespace rowi_project.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Agents");
+                    b.ToTable("Agents", (string)null);
                 });
 
             modelBuilder.Entity("rowi_project.Models.Entities.Bank", b =>
@@ -57,7 +57,7 @@ namespace rowi_project.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Banks");
+                    b.ToTable("Banks", (string)null);
                 });
 
             modelBuilder.Entity("rowi_project.Models.Entities.Client", b =>
@@ -67,7 +67,7 @@ namespace rowi_project.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Clients");
+                    b.ToTable("Clients", (string)null);
                 });
 
             modelBuilder.Entity("rowi_project.Models.Entities.Company", b =>
@@ -145,7 +145,7 @@ namespace rowi_project.Migrations
                     b.HasIndex("ShortName")
                         .IsUnique();
 
-                    b.ToTable("Companies");
+                    b.ToTable("Companies", (string)null);
                 });
 
             modelBuilder.Entity("AgentBank", b =>

@@ -10,24 +10,6 @@ public class AgentService(AppDbContext context) : IAgentService
 {
     public async Task<int> CreateAgentAsync(CreateAgentDto dto, CancellationToken cancellationToken)
     {
-        if (await context.Companies.AnyAsync(c => c.ShortName == dto.ShortName))
-            throw new ArgumentException("Компания с таким кратким наименованием уже существует");
-
-        if (await context.Companies.AnyAsync(c => c.FullName == dto.FullName))
-            throw new ArgumentException("Компания с таким полным наименованием уже существует");
-
-        if (await context.Companies.AnyAsync(c => c.Inn == dto.Inn))
-            throw new ArgumentException("Компания с таким ИНН уже существует");
-
-        if (await context.Companies.AnyAsync(c => c.Ogrn == dto.Ogrn))
-            throw new ArgumentException("Компания с таким ОГРН уже существует");
-
-        if (await context.Companies.AnyAsync(c => c.RepEmail == dto.RepEmail))
-            throw new ArgumentException("Компания с таким Email уже существует");
-
-        if (await context.Companies.AnyAsync(c => c.RepPhoneNumber == dto.RepPhoneNumber))
-            throw new ArgumentException("Компания с таким номером телефона уже существует");
-
         if (dto.BankIds == null || dto.BankIds.Count == 0)
             throw new ArgumentException("Агент должен быть привязан хотя бы к одному банку.");
 
@@ -61,12 +43,11 @@ public class AgentService(AppDbContext context) : IAgentService
         var agent = new Agent
         {
             Important = (bool)dto.Important!,
-            Company = company
+            Company = company,
+            Banks = await context.Banks
+                .Where(b => dto.BankIds.Contains(b.Id))
+                .ToListAsync(cancellationToken)
         };
-
-        agent.Banks = await context.Banks
-            .Where(b => dto.BankIds.Contains(b.Id))
-            .ToListAsync(cancellationToken);
 
         try
         {
@@ -89,10 +70,8 @@ public class AgentService(AppDbContext context) : IAgentService
         var agent = await context.Agents
             .Include(a => a.Company)
             .Include(a => a.Banks)
-            .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
-
-        if (agent == null)
-            throw new ArgumentException("Агент не найден");
+            .FirstOrDefaultAsync(a => a.Id == id, cancellationToken)
+            ?? throw new ArgumentException("Агент не найден");
 
         if (dto.BankIds == null || dto.BankIds.Count == 0)
             throw new ArgumentException("Агент должен быть привязан хотя бы к одному банку.");
@@ -166,11 +145,11 @@ public class AgentService(AppDbContext context) : IAgentService
             Ogrn = agent.Company.Ogrn,
             OgrnDateOfAssignment = agent.Company.OgrnDateOfAssignment,
             Important = agent.Important,
-            Banks = agent.Banks.Select(b => new BankDto
+            Banks = [.. agent.Banks.Select(b => new BankDto
             {
                 Id = b.Id,
                 ShortName = b.Company.ShortName
-            }).ToList()
+            })]
         };
     }
 
@@ -211,14 +190,15 @@ public class AgentService(AppDbContext context) : IAgentService
             query = query.Where(a => a.Company.OgrnDateOfAssignment <= searchDto.OgrnDateTo);
 
         // Сортировка
+        Console.WriteLine($"searchDto.SortBy {searchDto.SortBy}");
         query = searchDto.SortBy?.ToLower() switch
         {
             "shortName" => searchDto.SortDirection == "desc" ? query.OrderByDescending(a => a.Company.ShortName) : query.OrderBy(a => a.Company.ShortName),
             "inn" => searchDto.SortDirection == "desc" ? query.OrderByDescending(a => a.Company.Inn) : query.OrderBy(a => a.Company.Inn),
             "ogrn" => searchDto.SortDirection == "desc" ? query.OrderByDescending(a => a.Company.Ogrn) : query.OrderBy(a => a.Company.Ogrn),
-            "repName" => searchDto.SortDirection == "desc" ? query.OrderByDescending(a => a.Company.RepName) : query.OrderBy(a => a.Company.RepName),
-            "repSurName" => searchDto.SortDirection == "desc" ? query.OrderByDescending(a => a.Company.RepSurName) : query.OrderBy(a => a.Company.RepSurName),
-            "ogrnDateOfAssignment" => searchDto.SortDirection == "desc" ? query.OrderByDescending(a => a.Company.OgrnDateOfAssignment) : query.OrderBy(a => a.Company.OgrnDateOfAssignment),
+            "repname" => searchDto.SortDirection == "desc" ? query.OrderByDescending(a => a.Company.RepName) : query.OrderBy(a => a.Company.RepName),
+            "repsurname" => searchDto.SortDirection == "desc" ? query.OrderByDescending(a => a.Company.RepSurName) : query.OrderBy(a => a.Company.RepSurName),
+            "ogrndateofassignment" => searchDto.SortDirection == "desc" ? query.OrderByDescending(a => a.Company.OgrnDateOfAssignment) : query.OrderBy(a => a.Company.OgrnDateOfAssignment),
             _ => query.OrderBy(a => a.Id)
         };
 
@@ -228,7 +208,7 @@ public class AgentService(AppDbContext context) : IAgentService
 
         var agents = await query.ToListAsync(cancellationToken);
 
-        return agents.Select(agent => new AgentDto
+        return [.. agents.Select(agent => new AgentDto
         {
             Id = agent.Id,
             RepFullName = $"{agent.Company.RepSurName} {agent.Company.RepName} {agent.Company.RepPatronymic}",
@@ -239,24 +219,22 @@ public class AgentService(AppDbContext context) : IAgentService
             Inn = agent.Company.Inn,
             Kpp = agent.Company.Kpp,
             Ogrn = agent.Company.Ogrn,
-            OgrnDateOfAssignment = agent.Company.OgrnDateOfAssignment,
+            OgrnDateOfAssignment =  agent.Company.OgrnDateOfAssignment,
             Important = agent.Important,
-            Banks = agent.Banks.Select(b => new BankDto
+            Banks = [.. agent.Banks.Select(b => new BankDto
             {
                 Id = b.Id,
                 ShortName = b.Company.ShortName
-            }).ToList()
-        }).ToList();
+            })]
+        })];
     }
 
     public async Task DeleteAgentAsync(int id, CancellationToken cancellationToken)
     {
         var agent = await context.Agents
             .Include(a => a.Company)
-            .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
-
-        if (agent == null)
-            throw new KeyNotFoundException("Агент не найден");
+            .FirstOrDefaultAsync(a => a.Id == id, cancellationToken)
+            ?? throw new KeyNotFoundException("Агент не найден");
 
         context.Companies.Remove(agent.Company); // удалит и Agent тоже, в бд on delete cascade
         await context.SaveChangesAsync(cancellationToken);
