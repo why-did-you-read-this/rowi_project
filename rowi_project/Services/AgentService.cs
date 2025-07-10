@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using rowi_project.Data;
 using rowi_project.Models.Dtos;
@@ -6,7 +8,7 @@ using rowi_project.Models.Entities;
 
 namespace rowi_project.Services;
 
-public class AgentService(AppDbContext context) : IAgentService
+public class AgentService(AppDbContext context, IMapper mapper) : IAgentService
 {
     public async Task<int> CreateAgentAsync(CreateAgentDto dto, CancellationToken cancellationToken)
     {
@@ -25,29 +27,11 @@ public class AgentService(AppDbContext context) : IAgentService
             throw new ArgumentException($"Не найдены банки с этими id: {idsString}");
         }
 
-        var company = new Company
-        {
-            ShortName = dto.ShortName,
-            FullName = dto.FullName,
-            Inn = dto.Inn,
-            Kpp = dto.Kpp,
-            Ogrn = dto.Ogrn,
-            OgrnDateOfAssignment = (DateOnly)dto.OgrnDateOfAssignment!,
-            RepName = dto.RepName,
-            RepSurName = dto.RepSurname,
-            RepPatronymic = dto.RepPatronymic,
-            RepEmail = dto.RepEmail,
-            RepPhoneNumber = dto.RepPhoneNumber,
-        };
+        var agent = mapper.Map<Agent>(dto);
 
-        var agent = new Agent
-        {
-            Important = (bool)dto.Important!,
-            Company = company,
-            Banks = await context.Banks
-                .Where(b => dto.BankIds.Contains(b.Id))
-                .ToListAsync(cancellationToken)
-        };
+        agent.Banks = await context.Banks
+            .Where(b => dto.BankIds.Contains(b.Id))
+            .ToListAsync(cancellationToken);
 
         try
         {
@@ -83,30 +67,11 @@ public class AgentService(AppDbContext context) : IAgentService
 
         var missingBankIds = dto.BankIds.Except(actualBankIds).ToList();
         if (missingBankIds.Count > 0)
-        {
-            var idsString = string.Join(", ", missingBankIds);
-            throw new ArgumentException($"Не найдены банки с этими id: {idsString}");
-        }
+            throw new ArgumentException($"Не найдены банки с этими id: {string.Join(", ", missingBankIds)}");
 
-
-        var company = agent.Company;
-        company.ShortName = dto.ShortName;
-        company.FullName = dto.FullName;
-        company.Inn = dto.Inn;
-        company.Kpp = dto.Kpp;
-        company.Ogrn = dto.Ogrn;
-        company.OgrnDateOfAssignment = (DateOnly)dto.OgrnDateOfAssignment!;
-        company.RepName = dto.RepName;
-        company.RepSurName = dto.RepSurname;
-        company.RepPatronymic = dto.RepPatronymic;
-        company.RepEmail = dto.RepEmail;
-        company.RepPhoneNumber = dto.RepPhoneNumber;
-
-        agent.Banks = await context.Banks
-            .Where(b => dto.BankIds!.Contains(b.Id))
-            .ToListAsync(cancellationToken);
-
-        agent.Important = (bool)dto.Important!;
+        mapper.Map(dto, agent.Company);
+        agent.Banks = await context.Banks.Where(b => dto.BankIds.Contains(b.Id)).ToListAsync(cancellationToken);
+        agent.Important = dto.Important!.Value;
 
         try
         {
@@ -124,33 +89,12 @@ public class AgentService(AppDbContext context) : IAgentService
 
     public async Task<AgentDto?> GetAgentByIdAsync(int id)
     {
-        var agent = await context.Agents
+        return await context.Agents
             .Include(a => a.Company)
-            .Include(a => a.Banks)
-                .ThenInclude(b => b.Company)
-            .FirstOrDefaultAsync(a => a.Id == id);
-
-        if (agent == null) return null;
-
-        return new AgentDto
-        {
-            Id = agent.Id,
-            RepFullName = $"{agent.Company.RepSurName} {agent.Company.RepName} {agent.Company.RepPatronymic}",
-            RepEmail = agent.Company.RepEmail,
-            RepPhoneNumber = agent.Company.RepPhoneNumber,
-            ShortName = agent.Company.ShortName,
-            FullName = agent.Company.FullName,
-            Inn = agent.Company.Inn,
-            Kpp = agent.Company.Kpp,
-            Ogrn = agent.Company.Ogrn,
-            OgrnDateOfAssignment = agent.Company.OgrnDateOfAssignment,
-            Important = agent.Important,
-            Banks = [.. agent.Banks.Select(b => new BankDto
-            {
-                Id = b.Id,
-                ShortName = b.Company.ShortName
-            })]
-        };
+            .Include(a => a.Banks).ThenInclude(b => b.Company)
+            .Where(a => a.Id == id)
+            .ProjectTo<AgentDto>(mapper.ConfigurationProvider)
+            .FirstOrDefaultAsync();
     }
 
     public async Task<List<AgentDto>> SearchAgentsAsync(AgentSearchDto searchDto, CancellationToken cancellationToken)
@@ -190,7 +134,6 @@ public class AgentService(AppDbContext context) : IAgentService
             query = query.Where(a => a.Company.OgrnDateOfAssignment <= searchDto.OgrnDateTo);
 
         // Сортировка
-        Console.WriteLine($"searchDto.SortBy {searchDto.SortBy}");
         query = searchDto.SortBy?.ToLower() switch
         {
             "shortName" => searchDto.SortDirection == "desc" ? query.OrderByDescending(a => a.Company.ShortName) : query.OrderBy(a => a.Company.ShortName),
@@ -206,42 +149,19 @@ public class AgentService(AppDbContext context) : IAgentService
         int skip = (searchDto.PageNumber - 1) * searchDto.PageSize;
         query = query.Skip(skip).Take(searchDto.PageSize);
 
-        var agents = await query.ToListAsync(cancellationToken);
-
-        return [.. agents.Select(agent => new AgentDto
-        {
-            Id = agent.Id,
-            RepFullName = $"{agent.Company.RepSurName} {agent.Company.RepName} {agent.Company.RepPatronymic}",
-            RepEmail = agent.Company.RepEmail,
-            RepPhoneNumber = agent.Company.RepPhoneNumber,
-            ShortName = agent.Company.ShortName,
-            FullName = agent.Company.FullName,
-            Inn = agent.Company.Inn,
-            Kpp = agent.Company.Kpp,
-            Ogrn = agent.Company.Ogrn,
-            OgrnDateOfAssignment =  agent.Company.OgrnDateOfAssignment,
-            Important = agent.Important,
-            Banks = [.. agent.Banks.Select(b => new BankDto
-            {
-                Id = b.Id,
-                ShortName = b.Company.ShortName
-            })]
-        })];
+        return await query.ProjectTo<AgentDto>(mapper.ConfigurationProvider).ToListAsync(cancellationToken);
     }
 
     public async Task DeleteAgentAsync(int id, CancellationToken cancellationToken)
     {
         var agent = await context.Agents
             .Include(a => a.Company)
-            .FirstOrDefaultAsync(a => a.Id == id, cancellationToken)
+            .SingleOrDefaultAsync(a => a.Id == id, cancellationToken)
             ?? throw new KeyNotFoundException("Агент не найден");
 
         agent.Company.DeletedAt = DateTime.UtcNow;
         await context.SaveChangesAsync(cancellationToken);
     }
-
-
-
     private static int HandleUniqueViolation(PostgresException pgEx)
     {
         throw pgEx.ConstraintName switch

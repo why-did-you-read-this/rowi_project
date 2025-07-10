@@ -1,6 +1,7 @@
-using rowi_project.Data;
-using rowi_project.Services;
 using Microsoft.EntityFrameworkCore;
+using rowi_project.Data;
+using rowi_project.Mapping;
+using rowi_project.Services;
 
 namespace rowi_project;
 
@@ -29,9 +30,10 @@ public class Program
         });
         builder.Services.AddScoped<IAgentService, AgentService>();
 
+        builder.Services.AddAutoMapper(typeof(MappingProfile));
+
         var app = builder.Build();
 
-        // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
             app.MapOpenApi();
