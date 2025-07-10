@@ -3,6 +3,7 @@ using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using rowi_project.Data;
+using rowi_project.Exceptions;
 using rowi_project.Models.Dtos;
 using rowi_project.Models.Entities;
 
@@ -43,10 +44,6 @@ public class AgentService(AppDbContext context, IMapper mapper) : IAgentService
         {
             return HandleUniqueViolation(pgEx);
         }
-        catch (Exception ex)
-        {
-            throw new Exception($"Ошибка при сохранении агента: {ex.Message}");
-        }
     }
 
     public async Task UpdateAgentAsync(int id, UpdateAgentDto dto, CancellationToken cancellationToken)
@@ -73,28 +70,19 @@ public class AgentService(AppDbContext context, IMapper mapper) : IAgentService
         agent.Banks = await context.Banks.Where(b => dto.BankIds.Contains(b.Id)).ToListAsync(cancellationToken);
         agent.Important = dto.Important!.Value;
 
-        try
-        {
-            await context.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505") // Нарушение уникальности
-        {
-            HandleUniqueViolation(pgEx);
-        }
-        catch (Exception ex)
-        {
-            throw new Exception($"Ошибка при обновлении агента: {ex.Message}");
-        }
+        await context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<AgentDto?> GetAgentByIdAsync(int id)
+    public async Task<AgentDto?> GetAgentByIdAsync(int id, CancellationToken cancellationToken)
     {
-        return await context.Agents
-            .Include(a => a.Company)
-            .Include(a => a.Banks).ThenInclude(b => b.Company)
-            .Where(a => a.Id == id)
-            .ProjectTo<AgentDto>(mapper.ConfigurationProvider)
-            .FirstOrDefaultAsync();
+        var agent = await context.Agents
+        .Include(a => a.Company)
+        .Include(a => a.Banks).ThenInclude(b => b.Company)
+        .Where(a => a.Id == id)
+        .ProjectTo<AgentDto>(mapper.ConfigurationProvider)
+        .FirstOrDefaultAsync(cancellationToken);
+
+        return agent ?? throw new NotFoundException($"Агент с ID {id} не найден");
     }
 
     public async Task<List<AgentDto>> SearchAgentsAsync(AgentSearchDto searchDto, CancellationToken cancellationToken)
@@ -162,17 +150,19 @@ public class AgentService(AppDbContext context, IMapper mapper) : IAgentService
         agent.Company.DeletedAt = DateTime.UtcNow;
         await context.SaveChangesAsync(cancellationToken);
     }
+
     private static int HandleUniqueViolation(PostgresException pgEx)
     {
-        throw pgEx.ConstraintName switch
+        var message = pgEx.ConstraintName switch
         {
-            "IX_Companies_ShortName" => new ArgumentException("Компания с таким кратким наименованием уже существует"),
-            "IX_Companies_FullName" => new ArgumentException("Компания с таким полным наименованием уже существует"),
-            "IX_Companies_Inn" => new ArgumentException("Компания с таким ИНН уже существует"),
-            "IX_Companies_Ogrn" => new ArgumentException("Компания с таким ОГРН уже существует"),
-            "IX_Companies_RepEmail" => new ArgumentException("Представитель с таким email уже существует"),
-            "IX_Companies_RepPhoneNumber" => new ArgumentException("Представитель с таким телефоном уже существует"),
-            _ => new ArgumentException("Нарушено уникальное ограничение"),
+            "IX_Companies_ShortName" => "Компания с таким кратким наименованием уже существует",
+            "IX_Companies_FullName" => "Компания с таким полным наименованием уже существует",
+            "IX_Companies_Inn" => "Компания с таким ИНН уже существует",
+            "IX_Companies_Ogrn" => "Компания с таким ОГРН уже существует",
+            "IX_Companies_RepEmail" => "Представитель с таким email уже существует",
+            "IX_Companies_RepPhoneNumber" => "Представитель с таким телефоном уже существует",
+            _ => "Нарушено уникальное ограничение",
         };
+        throw new DuplicateEntryException(message);
     }
 }

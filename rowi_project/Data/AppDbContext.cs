@@ -19,6 +19,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.ApplyConfiguration(new ClientConfiguration());
 
         modelBuilder.Entity<Company>().HasQueryFilter(c => c.DeletedAt == null);
+        modelBuilder.Entity<Agent>().HasQueryFilter(a => a.Company.DeletedAt == null);
+        modelBuilder.Entity<Bank>().HasQueryFilter(a => a.Company.DeletedAt == null);
+        modelBuilder.Entity<Client>().HasQueryFilter(a => a.Company.DeletedAt == null);
         base.OnModelCreating(modelBuilder);
     }
 }

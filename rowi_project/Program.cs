@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using rowi_project.Data;
 using rowi_project.Mapping;
+using rowi_project.Middleware;
 using rowi_project.Services;
 
 namespace rowi_project;
@@ -33,6 +34,8 @@ public class Program
         builder.Services.AddAutoMapper(typeof(MappingProfile));
 
         var app = builder.Build();
+        
+        app.UseMiddleware<ExceptionHandlingMiddleware>();
 
         if (app.Environment.IsDevelopment())
         {
