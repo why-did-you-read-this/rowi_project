@@ -236,9 +236,10 @@ public class AgentService(AppDbContext context) : IAgentService
             .FirstOrDefaultAsync(a => a.Id == id, cancellationToken)
             ?? throw new KeyNotFoundException("Агент не найден");
 
-        context.Companies.Remove(agent.Company); // удалит и Agent тоже, в бд on delete cascade
+        agent.Company.DeletedAt = DateTime.UtcNow;
         await context.SaveChangesAsync(cancellationToken);
     }
+
 
 
     private static int HandleUniqueViolation(PostgresException pgEx)

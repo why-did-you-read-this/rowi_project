@@ -41,6 +41,8 @@ public class Company
     [Required, Phone]
     public string RepPhoneNumber { get; set; } = string.Empty;
 
+    public DateTime? DeletedAt { get; set; }
+
 
     public Agent? Agent { get; set; }
     public Bank? Bank { get; set; }
