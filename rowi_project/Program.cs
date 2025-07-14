@@ -22,19 +22,18 @@ public class Program
         {
             options.AddPolicy("AllowFrontend",
                 policy => policy.WithOrigins(
-                                    "http://localhost:5173",     
-                                    "http://localhost:51558",    
-                                    "https://localhost:7148"     
+                                    "http://localhost:13022"
                                 )
                                 .AllowAnyHeader()
                                 .AllowAnyMethod());
         });
         builder.Services.AddScoped<IAgentService, AgentService>();
+        builder.Services.AddScoped<IBankService, BankService>();
 
         builder.Services.AddAutoMapper(typeof(MappingProfile));
 
         var app = builder.Build();
-        
+
         app.UseMiddleware<ExceptionHandlingMiddleware>();
 
         if (app.Environment.IsDevelopment())

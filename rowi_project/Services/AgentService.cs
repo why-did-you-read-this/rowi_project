@@ -6,6 +6,7 @@ using rowi_project.Data;
 using rowi_project.Exceptions;
 using rowi_project.Models.Dtos;
 using rowi_project.Models.Entities;
+using rowi_project.Models;
 
 namespace rowi_project.Services;
 
@@ -85,7 +86,7 @@ public class AgentService(AppDbContext context, IMapper mapper) : IAgentService
         return agent ?? throw new NotFoundException($"Агент с ID {id} не найден");
     }
 
-    public async Task<List<AgentDto>> SearchAgentsAsync(AgentSearchDto searchDto, CancellationToken cancellationToken)
+    public async Task<PagedResult<AgentDto>> SearchAgentsAsync(AgentSearchDto searchDto, CancellationToken cancellationToken)
     {
         var query = context.Agents
             .Include(a => a.Company)
@@ -115,21 +116,28 @@ public class AgentService(AppDbContext context, IMapper mapper) : IAgentService
         if (!string.IsNullOrEmpty(searchDto.RepSurName))
             query = query.Where(a => EF.Functions.ILike(a.Company.RepSurName, $"%{searchDto.RepSurName}%"));
 
+        if (searchDto.Important is not null)
+            query = query.Where(a => a.Important == searchDto.Important);
+
         if (searchDto.OgrnDateFrom is not null)
             query = query.Where(a => a.Company.OgrnDateOfAssignment >= searchDto.OgrnDateFrom);
 
         if (searchDto.OgrnDateTo is not null)
             query = query.Where(a => a.Company.OgrnDateOfAssignment <= searchDto.OgrnDateTo);
 
+        var totalCount = await query.CountAsync(cancellationToken);
+
         // Сортировка
         query = searchDto.SortBy?.ToLower() switch
         {
-            "shortName" => searchDto.SortDirection == "desc" ? query.OrderByDescending(a => a.Company.ShortName) : query.OrderBy(a => a.Company.ShortName),
+            "shortname" => searchDto.SortDirection == "desc" ? query.OrderByDescending(a => a.Company.ShortName) : query.OrderBy(a => a.Company.ShortName),
             "inn" => searchDto.SortDirection == "desc" ? query.OrderByDescending(a => a.Company.Inn) : query.OrderBy(a => a.Company.Inn),
             "ogrn" => searchDto.SortDirection == "desc" ? query.OrderByDescending(a => a.Company.Ogrn) : query.OrderBy(a => a.Company.Ogrn),
             "repname" => searchDto.SortDirection == "desc" ? query.OrderByDescending(a => a.Company.RepName) : query.OrderBy(a => a.Company.RepName),
             "repsurname" => searchDto.SortDirection == "desc" ? query.OrderByDescending(a => a.Company.RepSurName) : query.OrderBy(a => a.Company.RepSurName),
             "ogrndateofassignment" => searchDto.SortDirection == "desc" ? query.OrderByDescending(a => a.Company.OgrnDateOfAssignment) : query.OrderBy(a => a.Company.OgrnDateOfAssignment),
+            "important" => searchDto.SortDirection == "desc" ? query.OrderByDescending(a => a.Important).ThenBy(a => a.Id) : query.OrderBy(a => a.Important).ThenBy(a => a.Id),
+            "id" => searchDto.SortDirection == "desc" ? query.OrderByDescending(a => a.Id) : query.OrderBy(a => a.Company.Id),
             _ => query.OrderBy(a => a.Id)
         };
 
@@ -137,7 +145,15 @@ public class AgentService(AppDbContext context, IMapper mapper) : IAgentService
         int skip = (searchDto.PageNumber - 1) * searchDto.PageSize;
         query = query.Skip(skip).Take(searchDto.PageSize);
 
-        return await query.ProjectTo<AgentDto>(mapper.ConfigurationProvider).ToListAsync(cancellationToken);
+        var items = await query
+            .ProjectTo<AgentDto>(mapper.ConfigurationProvider)
+            .ToListAsync(cancellationToken);
+
+        return new PagedResult<AgentDto>
+        {
+            TotalCount = totalCount,
+            Items = items
+        };
     }
 
     public async Task DeleteAgentAsync(int id, CancellationToken cancellationToken)

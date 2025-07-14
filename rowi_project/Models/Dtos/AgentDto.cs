@@ -1,6 +1,6 @@
 ﻿namespace rowi_project.Models.Dtos;
 
-public class AgentDto
+public record AgentDto
 {
     public int Id { get; set; }
 

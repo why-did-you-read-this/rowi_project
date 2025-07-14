@@ -54,6 +54,7 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
                 statusCode = HttpStatusCode.Conflict; // 409
                 title = "Duplicate Entry";
                 detail = duplicateEx.Message;
+                fieldName = duplicateEx.FieldName;
                 break;
 
             case DbUpdateException:
@@ -72,6 +73,9 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
         };
 
         problemDetails.Extensions["traceId"] = traceId;
+        
+        if (!string.IsNullOrWhiteSpace(fieldName))
+            problemDetails.Extensions["fieldName"] = fieldName;
 
         context.Response.StatusCode = (int)statusCode;
         var json = JsonSerializer.Serialize(problemDetails, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });

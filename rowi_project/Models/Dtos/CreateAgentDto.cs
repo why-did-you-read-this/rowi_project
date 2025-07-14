@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace rowi_project.Models.Dtos;
 
-public class CreateAgentDto
+public record CreateAgentDto
 {
     [Required]
     public string ShortName { get; set; } = null!;
