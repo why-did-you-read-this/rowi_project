@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using rowi_project.Data;
 using rowi_project.Mapping;
 using rowi_project.Middleware;
-using rowi_project.Services;
 
 namespace rowi_project;
 
@@ -27,11 +26,14 @@ public class Program
                                 .AllowAnyHeader()
                                 .AllowAnyMethod());
         });
-        builder.Services.AddScoped<IAgentService, AgentService>();
-        builder.Services.AddScoped<IBankService, BankService>();
+        //builder.Services.AddScoped<IAgentService, AgentService>();
+        //builder.Services.AddScoped<IBankService, BankService>();
 
-        builder.Services.AddAutoMapper(typeof(MappingProfile));
+        builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>());
 
+        builder.Services.AddMediatR(cfg => {
+            cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
+        });
         var app = builder.Build();
 
         app.UseMiddleware<ExceptionHandlingMiddleware>();

@@ -1,11 +1,6 @@
 ﻿namespace rowi_project.Exceptions;
 
-public class DuplicateEntryException : Exception
+public class DuplicateEntryException(string message, string? fieldName = null) : Exception(message)
 {
-    public string? FieldName { get; }
-
-    public DuplicateEntryException(string message, string? fieldName = null) : base(message)
-    {
-        FieldName = fieldName;
-    }
+    public string? FieldName { get; } = fieldName;
 }

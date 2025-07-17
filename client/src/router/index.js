@@ -1,33 +1,13 @@
-//import { createRouter, createWebHistory } from 'vue-router';
-
-//// Пример маршрутов, добавьте свои компоненты и пути
-//const routes = [
-//  {
-//    path: '/',
-//    name: 'Home',
-//    component: () => import('@/views/Home.vue'),
-//  },
-//  {
-//    path: '/about',
-//    name: 'About',
-//    component: () => import('@/views/About.vue'),
-//  },
-//  // Добавьте другие маршруты по необходимости
-//];
-
-//const router = createRouter({
-//  history: createWebHistory(),
-//  routes,
-//});
-
-//export default router;
-
 import { createRouter, createWebHistory } from 'vue-router'
-import App from '../App.vue' // корневая
-// сюда можно добавить страницы для банков и клиентов
+import AgentView from '/src/views/AgentView.vue'
+import BanksView from '/src/views/BanksView.vue'
+import ClientsView from '/src/views/ClientsView.vue'
+
 const routes = [
   { path: '/', redirect: '/agents' },
-  { path: '/agents', component: App }
+  { path: '/agents', component: AgentView },
+  { path: '/banks', component: BanksView },
+  { path: '/clients', component: ClientsView }
 ]
 
 export default createRouter({

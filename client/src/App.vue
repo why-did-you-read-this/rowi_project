@@ -1,6 +1,6 @@
-<template>
+<!--<template>
   <div class="app-container min-h-screen bg-gray-50 text-gray-800">
-    <!-- Навигация -->
+    Навигация
     <nav class="nav-tabs bg-white shadow mb-6">
       <RouterLink v-for="tab in tabs"
                   :key="tab.route"
@@ -10,8 +10,7 @@
         {{ tab.name }}
       </RouterLink>
     </nav>
-
-    <!-- Фильтры -->
+    Фильтры
     <section class="filter-section bg-white p-6 rounded-xl shadow mb-6">
       <h3 class="text-lg font-semibold mb-4">Настройка фильтра</h3>
       <div class="filter-grid grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -46,9 +45,8 @@
         Применить фильтрацию
       </button>
     </section>
-
-    <!-- Сортировка -->
-    <!--<section class="sort-controls mb-4 flex gap-4 items-center">
+    Сортировка
+    <section class="sort-controls mb-4 flex gap-4 items-center">
       <label class="text-sm font-medium">Сортировать по:</label>
       <select v-model="filters.sortBy" @change="applyFilter" class="input w-auto">
         <option value="id">ID</option>
@@ -60,22 +58,42 @@
         <option value="asc">↑ По возрастанию</option>
         <option value="desc">↓ По убыванию</option>
       </select>
-    </section>-->
-
-    <!-- Таблица -->
+    </section>
+    Таблица
     <section class="bg-white rounded-xl shadow p-6 mb-6 relative">
-      <button @click="openModal" class="absolute top-0 right-0 bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700">
-        + Добавить
-      </button>
-
-      <table class="min-w-full text-sm">
+      <div v-if="isLoading" class="spinner">
+        <Loader class="w-10 h-10 animate-spin text-blue-600" />
+      </div>
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-semibold">Список агентов</h2>
+        <button class="flex add-btn items-center bg-green-600 text-white px-4 py-2 gap-2 rounded-xl hover:bg-green-600"
+                @click="openModal">
+          <PlusCircle class="w-5 h-5" />
+          <span>Добавить</span>
+        </button>
+      </div>
+      <table class="min-w-full text-sm table-auto">
+        <colgroup>
+          <col style="width: 6%" />
+          <col style="width: 18%" />
+          <col style="width: 18%" />
+          <col style="width: 16%" />
+          <col style="width: 20%" />
+          <col style="width: 14%" />
+          <col style="width: 12%" />
+          <col style="width: 6%" />
+        </colgroup>
         <thead class="bg-gray-100">
           <tr>
             <th class="th text-left px-3 py-2 cursor-pointer"
                 @click="setSort('id')">
               ID
               <span v-if="filters.sortBy === 'id'">
-                {{ filters.sortDirection === 'asc' ? '▲' : '▼' }}
+                <ArrowUp v-if="filters.sortDirection==='asc'" class="inline w-4 h-4" />
+                <ArrowDown v-if="filters.sortDirection==='desc'" class="inline w-4 h-4" />
+              </span>
+              <span v-else>
+                <ArrowUpDown class="inline w-4 h-4" />
               </span>
             </th>
             <th class="th text-left px-3 py-2">ФИО представителя</th>
@@ -85,7 +103,11 @@
                 @click="setSort('ogrnDateOfAssignment')">
               Дата присвоения ОГРН
               <span v-if="filters.sortBy === 'ogrnDateOfAssignment'">
-                {{ filters.sortDirection === 'asc' ? '▲' : '▼' }}
+                <ArrowUp v-if="filters.sortDirection==='asc'" class="inline w-4 h-4" />
+                <ArrowDown v-if="filters.sortDirection==='desc'" class="inline w-4 h-4" />
+              </span>
+              <span v-else>
+                <ArrowUpDown class="inline w-4 h-4" />
               </span>
             </th>
             <th class="th text-left px-3 py-2">Банки</th>
@@ -93,7 +115,11 @@
                 @click="setSort('important')">
               Приоритет
               <span v-if="filters.sortBy === 'important'">
-                {{ filters.sortDirection === 'asc' ? '▲' : '▼' }}
+                <ArrowUp v-if="filters.sortDirection==='asc'" class="inline w-4 h-4" />
+                <ArrowDown v-if="filters.sortDirection==='desc'" class="inline w-4 h-4" />
+              </span>
+              <span v-else>
+                <ArrowUpDown class="inline w-4 h-4" />
               </span>
             </th>
             <th class="th text-left px-3 py-2">Действия</th>
@@ -121,15 +147,18 @@
               <input type="checkbox" class="accent-blue-600" :checked="agent.important" disabled />
             </td>
             <td class="px-3 py-2 space-x-2">
-              <button @click="editAgent(agent)" class="text-blue-600 hover:underline">Ред.</button>
-              <button @click="deleteAgent(agent.id)" class="text-red-600 hover:underline">Удалить</button>
+              <button @click="editAgent(agent)" class="text-blue-600 flex items-center">
+                <Edit2 class="w-5 h-5" />
+              </button>
+              <button @click="deleteAgent(agent.id)" class="text-red-600 flex items-center">
+                <Trash2 class="w-5 h-5" />
+              </button>
             </td>
           </tr>
         </tbody>
       </table>
     </section>
-
-    <!-- Пагинация -->
+    Пагинация
     <section class="flex justify-between items-center mb-6">
       <div>
         <label class="text-sm">На странице:</label>
@@ -143,8 +172,7 @@
         <button @click="changePage(filters.pageNumber+1)" :disabled="filters.pageNumber>=totalPages" class="px-2 py-1 bg-gray-200 rounded-xl disabled:opacity-50">▶</button>
       </div>
     </section>
-
-    <!-- Модальное окно -->
+    Модальное окно
     <AgentModal v-if="showModal" :agent="editingAgent" :isEdit="!!editingAgent" @close="closeModal" @saved="onModalSaved" />
   </div>
 </template>
@@ -154,6 +182,9 @@
   import { useRouter, RouterLink } from 'vue-router'
   import axios from 'axios'
   import AgentModal from './components/AgentModal.vue'
+  import { ArrowUp, ArrowDown, ArrowUpDown, Edit2, Trash2, PlusCircle, Loader } from 'lucide-vue-next'
+
+  const isLoading = ref(true);
 
   const tabs = [
     { name: 'Компании агентов', route: '/agents' },
@@ -180,9 +211,14 @@
   const editingAgent = ref(null)
 
   async function fetchAgents() {
-    const { data } = await axios.get('/api/agents/search', { params: filters })
-    totalCount.value = data.totalCount
-    agents.value = data.items
+    isLoading.value = true;
+    try {
+      const { data } = await axios.get('/api/agents/search', { params: filters });
+      totalCount.value = data.totalCount;
+      agents.value = data.items;
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   function setSort(column) {
@@ -243,6 +279,24 @@
   onMounted(fetchAgents)
 </script>
 
+<style scoped>
+  .spinner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.8);
+    z-index: 10;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+</style>
+
 <style>
   .app-container {
     max-width: 1400px;
@@ -263,4 +317,31 @@
     display: grid;
     gap: 1rem;
   }
-</style>
+</style>-->
+
+
+<template>
+  <div class="app-container min-h-screen bg-gray-50 text-gray-800">
+    <nav class="nav-tabs bg-white shadow mb-6">
+      <RouterLink v-for="tab in tabs"
+                  :key="tab.route"
+                  :to="tab.route"
+                  class="tab-item px-4 py-3 inline-block text-gray-600 hover:text-blue-600"
+                  active-class="text-blue-600 border-b-2 border-blue-600">
+        {{ tab.name }}
+      </RouterLink>
+    </nav>
+
+    <main class="px-6">
+      <router-view />
+    </main>
+  </div>
+</template>
+
+<script setup>
+  const tabs = [
+    { name: 'Компании агентов', route: '/agents' },
+    { name: 'Банки партнёры', route: '/banks' },
+    { name: 'Компании клиентов', route: '/clients' }
+  ]
+</script>

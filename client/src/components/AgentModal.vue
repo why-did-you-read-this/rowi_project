@@ -127,7 +127,7 @@
       bankResults.value = []
       return
     }
-    const res = await axios.get(`/api/banks/search?query=${bankSearch.value}`)
+    const res = await axios.get(`/api/banks/search?name=${bankSearch.value}`)
     bankResults.value = res.data
   }
 
